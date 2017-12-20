@@ -15,7 +15,7 @@ resource "aws_vpc" "main" {
 }
 
 resource "aws_subnet" "public" {
-  count                   = "${length(var.zone})"
+  count                   = "${length(var.zone)}"
   vpc_id                  = "${aws_vpc.main.id}"
   cidr_block              = "${element(var.public_cidr_block, count.index)}"
   availability_zone       = "us-east-1${element(var.zone, count.index)}"
@@ -28,7 +28,7 @@ resource "aws_subnet" "public" {
 }
 
 resource "aws_subnet" "private" {
-  count             = "${length(var.zone})"
+  count             = "${length(var.zone)}"
   vpc_id            = "${aws_vpc.main.id}"
   cidr_block        = "${element(var.private_cidr_block, count.index)}"
   availability_zone = "us-east-1${element(var.zone, count.index)}"
@@ -41,7 +41,6 @@ resource "aws_subnet" "private" {
 
 # Public route
 resource "aws_route_table" "public_route" {
-  count  = "{${length(var.zone)}}"
   vpc_id = "${aws_vpc.main.id}"
 
   tags {
@@ -54,14 +53,13 @@ resource "aws_route_table" "public_route" {
   }
 }
 
-resource "aws_route_table_association" "public_rta" {
+resource "aws_route_table_association" "public_rtable" {
   count          = "${length(var.zone)}"
-  subnet_id      = "${element(aws_subnet.public.*.id,count.index)}"
+  subnet_id      = "${element(aws_subnet.public.*.id, count.index)}"
   route_table_id = "${aws_route_table.public_route.id}"
 }
 
 resource "aws_internet_gateway" "gw" {
-  count  = "${length(var.zone)}"
   vpc_id = "${aws_vpc.main.id}"
 
   tags {
@@ -70,9 +68,17 @@ resource "aws_internet_gateway" "gw" {
   }
 }
 
+
+resource "aws_route" "public_internet" {
+  route_table_id = "${aws_route_table.public_route.id}"
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id = "${aws_internet_gateway.gw.id}"
+  depends_on = ["aws_route_table.public_route"]
+}
+
 # Private route
 resource "aws_route_table" "private_route" {
-  count  = "{${length(var.zone)}}"
+  count  = "${length(var.zone)}"
   vpc_id = "${aws_vpc.main.id}"
 
   tags {
@@ -87,27 +93,35 @@ resource "aws_route_table" "private_route" {
 
 # This costs money
 
-# resource "aws_eip" "nat_eip" {
-#   count = "${length(var.zone)}"
-#   vpc   = true
-#
-#   lifecycle {
-#     create_before_destroy = true
-#   }
-# }
-#
-# resource "aws_nat_gateway" "private_nat_gw" {
-#   count = "{${length(var.zone)}}"
-#   allocation_id = "${element(aws_eip.nat_eip.*.id, count.index)}"
-#   subnet_id = "${element(aws_subnet.public.*.id, count.index)}"
-#
-#   lifecycle {
-#     create_before_destroy = true
-#   }
-# }
+resource "aws_eip" "nat_eip" {
+  count = "${length(var.zone)}"
+  vpc   = true
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_nat_gateway" "private_nat_gw" {
+  count = "${length(var.zone)}"
+  allocation_id = "${element(aws_eip.nat_eip.*.id, count.index)}"
+  subnet_id = "${element(aws_subnet.public.*.id, count.index)}"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
 
 resource "aws_route_table_association" "private_route_assoc" {
-  count          = "{${length(var.zone)}}"
+  count          = "${length(var.zone)}"
   subnet_id      = "${element(aws_subnet.private.*.id,count.index)}"
-  route_table_id = "${element(aws_route_table.private_rt.*.id,count.index)}"
+  route_table_id = "${element(aws_route_table.private_route.*.id,count.index)}"
+}
+
+resource "aws_route" "private_internet" {
+  count          = "${length(var.zone)}"
+  route_table_id = "${element(aws_route_table.private_route.*.id, count.index)}"
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id = "${element(aws_nat_gateway.private_nat_gw.*.id, count.index)}"
+  depends_on = ["aws_route_table.private_route"]
 }
