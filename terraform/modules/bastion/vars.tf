@@ -7,7 +7,7 @@ variable "instance_type" {
 variable "key_name" {}
 
 variable "ebs_optimized" {
-  default = "true"
+  default = true
 }
 
 variable "environment" {}
@@ -32,7 +32,9 @@ variable "hc_check_type" {
   default = "elb"
 }
 
-variable "public_subnet_ids" {}
+variable "public_subnet_ids" {
+  type = "list"
+}
 
 variable "min_elb_capacity" {
   default = 1
