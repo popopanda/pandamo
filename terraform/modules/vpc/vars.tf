@@ -3,11 +3,11 @@ variable "vpc_cidr_block" {
 }
 
 variable "enable_dns_support" {
-  default = "yes"
+  default = true
 }
 
 variable "enable_dns_hostnames" {
-  default = "yes"
+  default = true
 }
 
 variable "zone" {
