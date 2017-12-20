@@ -32,7 +32,9 @@ variable "hc_check_type" {
   default = "elb"
 }
 
-variable "public_subnet_ids" {}
+variable "public_subnet_ids" {
+  type = "list"
+}
 
 variable "min_elb_capacity" {
   default = 1

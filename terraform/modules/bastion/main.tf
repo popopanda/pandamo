@@ -1,4 +1,3 @@
-
 # Retreive AMI ID
 data "aws_ami" "bastion_ami" {
   most_recent = true
@@ -11,11 +10,11 @@ data "aws_ami" "bastion_ami" {
 
 # ASG launch config
 resource "aws_launch_configuration" "lc" {
-  image_id             = "${data.aws_ami.bastion_ami.id}"
-  instance_type        = "${var.instance_type}"
-  key_name             = "${var.key_name}"
-  security_groups      = ["${aws_security_group.permit_ssh.id}"]
-  ebs_optimized        = "${var.ebs_optimized}"
+  image_id        = "${data.aws_ami.bastion_ami.id}"
+  instance_type   = "${var.instance_type}"
+  key_name        = "${var.key_name}"
+  security_groups = ["${aws_security_group.permit_ssh.id}"]
+  ebs_optimized   = "${var.ebs_optimized}"
 
   lifecycle {
     create_before_destroy = true
